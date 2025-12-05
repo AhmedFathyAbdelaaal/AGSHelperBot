@@ -1,0 +1,6 @@
+discord.py
+python-dotenv
+aiohttp
+python-docx
+google-auth
+google-api-python-client

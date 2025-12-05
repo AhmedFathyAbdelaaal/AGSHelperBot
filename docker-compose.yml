@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: ags_helper_bot
+    restart: always
+    volumes:
+      - ./data:/app/data
+      - ./service_account.json:/app/service_account.json
+    env_file:
+      - .env
