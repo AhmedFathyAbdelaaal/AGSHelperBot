@@ -1,15 +1,12 @@
-version: '3.8'
-
 services:
-  bot:
-    build: .
+  discord-bot:
     container_name: ags_helper_bot
-    restart: always
+    image: 'python:3.11-slim'
+    working_dir: /app
     volumes:
-      - ./data:/app/data
-      - ./service_account.json:/app/service_account.json
-    env_file:
-      - .env
+      - '/data/Dbots/AGSHelperBot:/app'
+    command: "sh -c \"pip install --no-cache-dir -r requirements.txt && python -u src/main.py\"\n"
+    restart: always
     environment:
       - 'DISCORD_TOKEN=${DISCORD_TOKEN}'
       - 'BACKUP_ROOT_FOLDER_ID=${BACKUP_ROOT_FOLDER_ID}'

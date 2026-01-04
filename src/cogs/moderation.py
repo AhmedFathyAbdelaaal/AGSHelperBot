@@ -20,6 +20,61 @@ class Moderation(commands.Cog):
             return False
         return True
 
+    @app_commands.command(name="striproles", description="Removes all roles from a user except Team Member & AGS Staff")
+    @app_commands.describe(member="The member to strip roles from")
+    async def strip_roles(self, interaction: discord.Interaction, member: discord.Member):
+        """Removes all roles from a user except Team Member & AGS Staff."""
+        if not await self.check_perms(interaction):
+            return
+
+        # Check if bot has permissions to manage roles
+        if not interaction.guild.me.guild_permissions.manage_roles:
+            await interaction.response.send_message("🚫 I don't have permission to manage roles.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        roles_to_keep_names = ["Team Member", "AGS Staff"]
+        # We start with an empty list. The code below automatically finds ALL roles the user has
+        # and adds them to this list, unless they are in the "keep" list above.
+        roles_to_remove = []
+        
+        bot_top_role = interaction.guild.me.top_role
+
+        for role in member.roles:
+            # Skip @everyone
+            if role.is_default():
+                continue
+            
+            # Skip roles we want to keep
+            if role.name in roles_to_keep_names:
+                continue
+                
+            # Check if bot can actually remove this role (hierarchy check)
+            if role >= bot_top_role:
+                # We can't remove roles higher or equal to the bot
+                continue
+                
+            # Skip managed roles (like Nitro Booster, or other bot roles)
+            if role.managed:
+                continue
+
+            roles_to_remove.append(role)
+
+        if not roles_to_remove:
+            await interaction.followup.send(f"No roles to remove from {member.mention}.", ephemeral=True)
+            return
+
+        try:
+            await member.remove_roles(*roles_to_remove, reason=f"Strip roles command by {interaction.user}")
+            removed_names = ", ".join([r.name for r in roles_to_remove])
+            # Truncate if too long for Discord message
+            if len(removed_names) > 1900:
+                removed_names = removed_names[:1900] + "..."
+            await interaction.followup.send(f"✅ Successfully removed {len(roles_to_remove)} roles from {member.mention}.\n**Removed:** {removed_names}", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Failed to remove roles: {e}", ephemeral=True)
+
     @app_commands.command(name="cleanmsgs", description="Delete X amount of latest messages from a specific user")
     @app_commands.describe(user_id="The ID of the user whose messages you want to delete", amount="The number of messages to delete")
     async def clean_msgs(self, interaction: discord.Interaction, user_id: str, amount: int):

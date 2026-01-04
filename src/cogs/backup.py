@@ -59,8 +59,13 @@ class Backup(commands.Cog):
 
     # --- Google Drive Helper Functions ---
 
-    def create_drive_folder(self, folder_name, parent_id=None):
-        """Creates a folder in Google Drive."""
+    async def create_drive_folder(self, folder_name, parent_id=None):
+        """Creates a folder in Google Drive (Async wrapper)."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._create_drive_folder_sync, folder_name, parent_id)
+
+    def _create_drive_folder_sync(self, folder_name, parent_id=None):
+        """Creates a folder in Google Drive (Blocking)."""
         if not self.drive_service:
             return None
         
@@ -78,8 +83,13 @@ class Backup(commands.Cog):
             print(f"Error creating folder {folder_name}: {e}")
             return None
 
-    def upload_file_to_drive(self, file_path, folder_id=None):
-        """Uploads a file to Google Drive."""
+    async def upload_file_to_drive(self, file_path, folder_id=None):
+        """Uploads a file to Google Drive (Async wrapper)."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._upload_file_to_drive_sync, file_path, folder_id)
+
+    def _upload_file_to_drive_sync(self, file_path, folder_id=None):
+        """Uploads a file to Google Drive (Blocking)."""
         if not self.drive_service:
             print("Drive service not initialized.")
             return None
@@ -104,8 +114,13 @@ class Backup(commands.Cog):
             print(f"Error uploading file {file_name}: {e}")
             return None
 
-    def share_file_anyone_reader(self, file_id):
-        """Makes a file or folder accessible to anyone with the link."""
+    async def share_file_anyone_reader(self, file_id):
+        """Makes a file or folder accessible to anyone with the link (Async wrapper)."""
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self._share_file_anyone_reader_sync, file_id)
+
+    def _share_file_anyone_reader_sync(self, file_id):
+        """Makes a file or folder accessible to anyone with the link (Blocking)."""
         if not self.drive_service:
             return None
         
@@ -180,9 +195,9 @@ class Backup(commands.Cog):
 
     # --- Backup Logic ---
 
-    async def backup_thread_logic(self, thread, parent_drive_id, temp_dir):
+    async def backup_thread_logic(self, thread, parent_drive_id, temp_dir, after_date=None):
         """Backs up a single thread."""
-        print(f"Starting backup for thread: {thread.name}")
+        print(f"[LOG] Starting backup for thread: {thread.name} (ID: {thread.id})")
         thread_name = self.clean_filename(thread.name)
         thread_folder_local = os.path.join(temp_dir, thread_name)
         os.makedirs(thread_folder_local, exist_ok=True)
@@ -192,29 +207,34 @@ class Backup(commands.Cog):
 
         docx_path = os.path.join(thread_folder_local, f"{thread_name}.docx")
 
-        messages = [message async for message in thread.history(limit=None)]
+        print(f"[LOG] Fetching messages for thread: {thread.name}...")
+        messages = [message async for message in thread.history(limit=None, after=after_date)]
+        print(f"[LOG] Fetched {len(messages)} messages for thread: {thread.name}. Creating DOCX...")
         await self.create_docx_from_messages(messages, docx_path, attachments_folder_local)
 
         # Upload to Drive
         # 1. Create Thread Folder in Drive
-        thread_drive_id = self.create_drive_folder(thread_name, parent_drive_id)
+        print(f"[LOG] Creating Drive folder for thread: {thread.name}...")
+        thread_drive_id = await self.create_drive_folder(thread_name, parent_drive_id)
         
         # 2. Upload Docx
-        self.upload_file_to_drive(docx_path, thread_drive_id)
+        print(f"[LOG] Uploading DOCX for thread: {thread.name}...")
+        await self.upload_file_to_drive(docx_path, thread_drive_id)
 
         # 3. Upload Attachments Folder
         if os.listdir(attachments_folder_local):
-            attachments_drive_id = self.create_drive_folder("Attachments", thread_drive_id)
+            print(f"[LOG] Uploading attachments for thread: {thread.name}...")
+            attachments_drive_id = await self.create_drive_folder("Attachments", thread_drive_id)
             for filename in os.listdir(attachments_folder_local):
                 file_path = os.path.join(attachments_folder_local, filename)
-                self.upload_file_to_drive(file_path, attachments_drive_id)
+                await self.upload_file_to_drive(file_path, attachments_drive_id)
         
-        print(f"Finished backup for thread: {thread.name}")
+        print(f"[LOG] Finished backup for thread: {thread.name}")
         return thread_drive_id
 
-    async def backup_channel_logic(self, channel, parent_drive_id, temp_dir):
+    async def backup_channel_logic(self, channel, parent_drive_id, temp_dir, after_date=None):
         """Backs up a channel and its threads."""
-        print(f"Starting backup for channel: {channel.name}")
+        print(f"[LOG] Starting backup for channel: {channel.name} (ID: {channel.id})")
         channel_name = self.clean_filename(channel.name)
         channel_folder_local = os.path.join(temp_dir, channel_name)
         os.makedirs(channel_folder_local, exist_ok=True)
@@ -228,20 +248,25 @@ class Backup(commands.Cog):
         docx_path = os.path.join(channel_folder_local, f"{channel_name}.docx")
 
         # Fetch messages
-        messages = [message async for message in channel.history(limit=None)]
+        print(f"[LOG] Fetching messages for channel: {channel.name}...")
+        messages = [message async for message in channel.history(limit=None, after=after_date)]
+        print(f"[LOG] Fetched {len(messages)} messages for channel: {channel.name}. Creating DOCX...")
         await self.create_docx_from_messages(messages, docx_path, attachments_folder_local)
 
         # Create Channel Folder in Drive
-        channel_drive_id = self.create_drive_folder(channel_name, parent_drive_id)
+        print(f"[LOG] Creating Drive folder for channel: {channel.name}...")
+        channel_drive_id = await self.create_drive_folder(channel_name, parent_drive_id)
 
         # Upload Docx
-        self.upload_file_to_drive(docx_path, channel_drive_id)
+        print(f"[LOG] Uploading DOCX for channel: {channel.name}...")
+        await self.upload_file_to_drive(docx_path, channel_drive_id)
 
         # Upload Attachments
         if os.listdir(attachments_folder_local):
-            attachments_drive_id = self.create_drive_folder("Attachments", channel_drive_id)
+            print(f"[LOG] Uploading attachments for channel: {channel.name}...")
+            attachments_drive_id = await self.create_drive_folder("Attachments", channel_drive_id)
             for filename in os.listdir(attachments_folder_local):
-                self.upload_file_to_drive(os.path.join(attachments_folder_local, filename), attachments_drive_id)
+                await self.upload_file_to_drive(os.path.join(attachments_folder_local, filename), attachments_drive_id)
 
         # Handle Threads
         if hasattr(channel, 'threads'):
@@ -253,30 +278,33 @@ class Backup(commands.Cog):
             # async for t in channel.archived_threads(): all_threads.append(t) # Optional: Add archived
 
             if all_threads:
-                threads_drive_id = self.create_drive_folder("Threads", channel_drive_id)
+                print(f"[LOG] Found {len(all_threads)} threads in channel: {channel.name}. Backing them up...")
+                threads_drive_id = await self.create_drive_folder("Threads", channel_drive_id)
                 os.makedirs(threads_folder_local, exist_ok=True)
                 
                 for thread in all_threads:
-                    await self.backup_thread_logic(thread, threads_drive_id, threads_folder_local)
+                    await self.backup_thread_logic(thread, threads_drive_id, threads_folder_local, after_date)
         
-        print(f"Finished backup for channel: {channel.name}")
+        print(f"[LOG] Finished backup for channel: {channel.name}")
         return channel_drive_id
 
-    async def backup_category_logic(self, category, parent_drive_id, temp_dir):
+    async def backup_category_logic(self, category, parent_drive_id, temp_dir, after_date=None):
         """Backs up a category and its channels."""
-        print(f"Starting backup for category: {category.name}")
+        print(f"[LOG] Starting backup for category: {category.name} (ID: {category.id})")
         category_name = self.clean_filename(category.name)
         category_folder_local = os.path.join(temp_dir, category_name)
         os.makedirs(category_folder_local, exist_ok=True)
 
         # Create Category Folder in Drive
-        category_drive_id = self.create_drive_folder(category_name, parent_drive_id)
+        print(f"[LOG] Creating Drive folder for category: {category.name}...")
+        category_drive_id = await self.create_drive_folder(category_name, parent_drive_id)
 
+        print(f"[LOG] Processing {len(category.channels)} channels in category: {category.name}...")
         for channel in category.channels:
             if isinstance(channel, discord.TextChannel):
-                await self.backup_channel_logic(channel, category_drive_id, category_folder_local)
+                await self.backup_channel_logic(channel, category_drive_id, category_folder_local, after_date)
         
-        print(f"Finished backup for category: {category.name}")
+        print(f"[LOG] Finished backup for category: {category.name}")
         return category_drive_id
 
     # --- Helper Methods ---
@@ -297,8 +325,34 @@ class Backup(commands.Cog):
 
     backup_group = app_commands.Group(name="backup", description="Backup commands")
 
+    def parse_duration(self, duration_str: str):
+        """Parses a duration string (e.g., '7d', '24h') into a datetime object."""
+        if not duration_str:
+            return None
+        
+        now = datetime.datetime.now(datetime.timezone.utc)
+        try:
+            amount = int(duration_str[:-1])
+            unit = duration_str[-1].lower()
+            
+            if unit == 'd':
+                delta = datetime.timedelta(days=amount)
+            elif unit == 'h':
+                delta = datetime.timedelta(hours=amount)
+            elif unit == 'w':
+                delta = datetime.timedelta(weeks=amount)
+            elif unit == 'm': # Minutes
+                delta = datetime.timedelta(minutes=amount)
+            else:
+                return None
+            
+            return now - delta
+        except ValueError:
+            return None
+
     @backup_group.command(name="thread", description="Back up a thread")
-    async def backup_thread(self, interaction: discord.Interaction, thread: discord.Thread = None):
+    @app_commands.describe(since="Backup messages since (e.g., 7d, 24h, 2w)")
+    async def backup_thread(self, interaction: discord.Interaction, thread: discord.Thread = None, since: str = None):
         """Backs up a thread."""
         if not await self.check_perms(interaction):
             return
@@ -308,11 +362,16 @@ class Backup(commands.Cog):
             await interaction.response.send_message("The target is not a thread.", ephemeral=True)
             return
 
+        after_date = self.parse_duration(since)
+        if since and not after_date:
+            await interaction.response.send_message("Invalid duration format. Use 7d, 24h, 2w, etc.", ephemeral=True)
+            return
+
         if not self.drive_service:
             await interaction.response.send_message("Google Drive service is not configured.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         
         root_folder_id = os.getenv('BACKUP_ROOT_FOLDER_ID')
         if not root_folder_id:
@@ -321,9 +380,9 @@ class Backup(commands.Cog):
 
         temp_dir = f"temp_backup_{interaction.id}"
         try:
-            threads_root_id = self.create_drive_folder("Threads Folder", root_folder_id)
-            drive_id = await self.backup_thread_logic(target_thread, threads_root_id, temp_dir)
-            self.share_file_anyone_reader(drive_id)
+            threads_root_id = await self.create_drive_folder("Threads Folder", root_folder_id)
+            drive_id = await self.backup_thread_logic(target_thread, threads_root_id, temp_dir, after_date)
+            await self.share_file_anyone_reader(drive_id)
             link = f"https://drive.google.com/drive/folders/{drive_id}"
             await interaction.followup.send(f"Thread backup complete! [View in Drive]({link})")
         except Exception as e:
@@ -334,7 +393,8 @@ class Backup(commands.Cog):
                 shutil.rmtree(temp_dir)
 
     @backup_group.command(name="channel", description="Back up a channel")
-    async def backup_channel(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
+    @app_commands.describe(since="Backup messages since (e.g., 7d, 24h, 2w)")
+    async def backup_channel(self, interaction: discord.Interaction, channel: discord.TextChannel = None, since: str = None):
         """Backs up a channel."""
         if not await self.check_perms(interaction):
             return
@@ -344,11 +404,16 @@ class Backup(commands.Cog):
              await interaction.response.send_message("The target is not a text channel.", ephemeral=True)
              return
 
+        after_date = self.parse_duration(since)
+        if since and not after_date:
+            await interaction.response.send_message("Invalid duration format. Use 7d, 24h, 2w, etc.", ephemeral=True)
+            return
+
         if not self.drive_service:
             await interaction.response.send_message("Google Drive service is not configured.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         
         root_folder_id = os.getenv('BACKUP_ROOT_FOLDER_ID')
         if not root_folder_id:
@@ -357,8 +422,8 @@ class Backup(commands.Cog):
 
         temp_dir = f"temp_backup_{interaction.id}"
         try:
-            drive_id = await self.backup_channel_logic(target_channel, root_folder_id, temp_dir)
-            self.share_file_anyone_reader(drive_id)
+            drive_id = await self.backup_channel_logic(target_channel, root_folder_id, temp_dir, after_date)
+            await self.share_file_anyone_reader(drive_id)
             link = f"https://drive.google.com/drive/folders/{drive_id}"
             await interaction.followup.send(f"Channel backup complete! [View in Drive]({link})")
         except Exception as e:
@@ -369,7 +434,8 @@ class Backup(commands.Cog):
                 shutil.rmtree(temp_dir)
 
     @backup_group.command(name="category", description="Back up a category")
-    async def backup_category(self, interaction: discord.Interaction, category: discord.CategoryChannel = None):
+    @app_commands.describe(since="Backup messages since (e.g., 7d, 24h, 2w)")
+    async def backup_category(self, interaction: discord.Interaction, category: discord.CategoryChannel = None, since: str = None):
         """Backs up a category."""
         if not await self.check_perms(interaction):
             return
@@ -379,11 +445,16 @@ class Backup(commands.Cog):
             await interaction.response.send_message("No category specified or found.", ephemeral=True)
             return
 
+        after_date = self.parse_duration(since)
+        if since and not after_date:
+            await interaction.response.send_message("Invalid duration format. Use 7d, 24h, 2w, etc.", ephemeral=True)
+            return
+
         if not self.drive_service:
             await interaction.response.send_message("Google Drive service is not configured.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         
         root_folder_id = os.getenv('BACKUP_ROOT_FOLDER_ID')
         if not root_folder_id:
@@ -392,8 +463,8 @@ class Backup(commands.Cog):
 
         temp_dir = f"temp_backup_{interaction.id}"
         try:
-            drive_id = await self.backup_category_logic(target_category, root_folder_id, temp_dir)
-            self.share_file_anyone_reader(drive_id)
+            drive_id = await self.backup_category_logic(target_category, root_folder_id, temp_dir, after_date)
+            await self.share_file_anyone_reader(drive_id)
             link = f"https://drive.google.com/drive/folders/{drive_id}"
             await interaction.followup.send(f"Category backup complete! [View in Drive]({link})")
         except Exception as e:
@@ -404,7 +475,8 @@ class Backup(commands.Cog):
                 shutil.rmtree(temp_dir)
 
     @backup_group.command(name="server", description="Back up the entire server")
-    async def backup_server(self, interaction: discord.Interaction):
+    @app_commands.describe(since="Backup messages since (e.g., 7d, 24h, 2w)")
+    async def backup_server(self, interaction: discord.Interaction, since: str = None):
         """Backs up the entire server."""
         if not await self.check_perms(interaction):
             return
@@ -414,11 +486,16 @@ class Backup(commands.Cog):
             await interaction.response.send_message("🚫 You need the 'isAdmin' role to use this command.", ephemeral=True)
             return
 
+        after_date = self.parse_duration(since)
+        if since and not after_date:
+            await interaction.response.send_message("Invalid duration format. Use 7d, 24h, 2w, etc.", ephemeral=True)
+            return
+
         if not self.drive_service:
             await interaction.response.send_message("Google Drive service is not configured.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         
         root_folder_id = os.getenv('BACKUP_ROOT_FOLDER_ID')
         if not root_folder_id:
@@ -427,29 +504,33 @@ class Backup(commands.Cog):
 
         temp_dir = f"temp_backup_{interaction.id}"
         try:
+            print(f"[LOG] Starting SERVER backup for: {interaction.guild.name}")
             # Folder: Server Name
             server_name = self.clean_filename(interaction.guild.name)
-            server_drive_id = self.create_drive_folder(server_name, root_folder_id)
+            server_drive_id = await self.create_drive_folder(server_name, root_folder_id)
             
             # Categories
+            print(f"[LOG] Processing {len(interaction.guild.categories)} categories...")
             for category in interaction.guild.categories:
-                await self.backup_category_logic(category, server_drive_id, temp_dir)
+                await self.backup_category_logic(category, server_drive_id, temp_dir, after_date)
             
             # Channels not in categories?
             # Discord channels can exist without categories.
             no_cat_channels = [c for c in interaction.guild.text_channels if not c.category]
             if no_cat_channels:
-                uncategorized_id = self.create_drive_folder("Uncategorized", server_drive_id)
+                print(f"[LOG] Processing {len(no_cat_channels)} uncategorized channels...")
+                uncategorized_id = await self.create_drive_folder("Uncategorized", server_drive_id)
                 uncategorized_dir = os.path.join(temp_dir, "Uncategorized")
                 for channel in no_cat_channels:
-                    await self.backup_channel_logic(channel, uncategorized_id, uncategorized_dir)
+                    await self.backup_channel_logic(channel, uncategorized_id, uncategorized_dir, after_date)
 
-            self.share_file_anyone_reader(server_drive_id)
+            await self.share_file_anyone_reader(server_drive_id)
             link = f"https://drive.google.com/drive/folders/{server_drive_id}"
+            print(f"[LOG] Server backup complete for: {interaction.guild.name}")
             await interaction.followup.send(f"Server backup complete! [View in Drive]({link})")
         except Exception as e:
             await interaction.followup.send(f"Backup failed: {e}")
-            print(e)
+            print(f"[ERROR] Backup failed: {e}")
         finally:
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)

@@ -9,8 +9,21 @@ from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Load environment variables
-load_dotenv()
+# Try to load from .env file in the project root
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+else:
+    # Fallback to default behavior (useful if .env is in current dir)
+    load_dotenv()
+
 TOKEN = os.getenv('DISCORD_TOKEN')
+
+# Debug Token (Print first few chars to verify it's loaded)
+if TOKEN:
+    print(f"Token loaded: {TOKEN[:5]}...{TOKEN[-5:]}")
+else:
+    print("Error: DISCORD_TOKEN is None")
 
 # Setup Intents
 intents = discord.Intents.default()
