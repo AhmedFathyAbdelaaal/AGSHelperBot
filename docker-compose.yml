@@ -10,3 +10,6 @@ services:
       - ./service_account.json:/app/service_account.json
     env_file:
       - .env
+    environment:
+      - 'DISCORD_TOKEN=${DISCORD_TOKEN}'
+      - 'BACKUP_ROOT_FOLDER_ID=${BACKUP_ROOT_FOLDER_ID}'
