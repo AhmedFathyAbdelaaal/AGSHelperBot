@@ -1,0 +1,22 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="text-xl font-bold mb-4 text-gray-800">Daily Reports</h2>
+  
+  <div *ngIf="loading" class="text-gray-500">Loading reports...</div>
+  
+  <div class="space-y-4" *ngIf="!loading && reports.length > 0">
+    <div *ngFor="let r of reports" class="border rounded p-4">
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-bold text-indigo-700">{{ r.username || r.user_id }}</span>
+        <span class="text-xs text-gray-500">{{ r.timestamp | date:'medium' }}</span>
+      </div>
+      <div class="mt-2">
+        <h4 class="text-sm font-semibold text-gray-700">Activity</h4>
+        <p class="text-gray-600 text-sm whitespace-pre-wrap">{{ r.content_main }}</p>
+      </div>
+      <div class="mt-2" *ngIf="r.content_notes">
+        <h4 class="text-sm font-semibold text-gray-700">Blockers/Notes</h4>
+        <p class="text-red-500 text-sm whitespace-pre-wrap">{{ r.content_notes }}</p>
+      </div>
+    </div>
+  </div>
+</div>

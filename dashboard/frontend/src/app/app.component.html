@@ -1,0 +1,18 @@
+<div class="min-h-screen bg-gray-100 flex pb-10">
+  <aside class="w-64 bg-white shadow-xl h-screen sticky top-0 flex flex-col">
+    <div class="px-6 py-4 border-b">
+      <h1 class="text-2xl font-bold text-indigo-600">AGS Helper</h1>
+      <p class="text-sm text-gray-500">Bot Dashboard</p>
+    </div>
+    <nav class="flex flex-col gap-2 p-4">
+      <a routerLink="/" class="text-gray-700 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Dashboard</a>
+      <a routerLink="/status" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">User Status</a>
+      <a routerLink="/vclogs" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Voice Logs</a>
+      <a routerLink="/requests" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Requests</a>
+      <a routerLink="/reports" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Reports</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-8 overflow-y-auto">
+    <router-outlet></router-outlet>
+  </main>
+</div>

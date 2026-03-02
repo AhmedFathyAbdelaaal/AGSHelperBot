@@ -5,8 +5,21 @@ services:
     working_dir: /app
     volumes:
       - '/data/Dbots/AGSHelperBot:/app'
-    command: "sh -c \"pip install --no-cache-dir -r requirements.txt && python -u src/main.py\"\n"
+    command: "sh -c \"pip install --no-cache-dir -r requirements.txt && python -u src/main.py\""
     restart: always
     environment:
       - 'DISCORD_TOKEN=${DISCORD_TOKEN}'
       - 'BACKUP_ROOT_FOLDER_ID=${BACKUP_ROOT_FOLDER_ID}'
+
+  dashboard:
+    container_name: ags_dashboard
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - '/data/Dbots/AGSHelperBot/data:/app/data'
+    restart: always
+    environment:
+      - 'DATA_DIR=/app/data'

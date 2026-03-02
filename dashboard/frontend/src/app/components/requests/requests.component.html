@@ -1,0 +1,23 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="text-xl font-bold mb-4 text-gray-800">Requests (Bugs & Ideas)</h2>
+  
+  <div *ngIf="loading" class="text-gray-500">Loading requests...</div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4" *ngIf="!loading && requests.length > 0">
+    <div *ngFor="let r of requests" class="border rounded p-4 hover:shadow-md transition">
+      <div class="flex justify-between items-start mb-2">
+        <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ r.id }}</span>
+        <span [ngClass]="{
+          'bg-gray-200 text-gray-800': r.status === 'Untouched',
+          'bg-blue-100 text-blue-800': r.status === 'In Progress',
+          'bg-green-100 text-green-800': r.status === 'Complete',
+          'bg-orange-100 text-orange-800': r.status === 'Need Help',
+          'bg-red-100 text-red-800': r.status === 'Rejected'
+        }" class="text-xs font-semibold px-2 py-1 rounded">{{ r.status }}</span>
+      </div>
+      <h3 class="font-bold text-lg text-gray-800">{{ r.title }}</h3>
+      <p class="text-sm text-gray-600 mt-2 line-clamp-3">{{ r.description }}</p>
+      <div class="mt-4 text-xs text-gray-400">Created: {{ r.created_at | date:'short' }}</div>
+    </div>
+  </div>
+</div>
