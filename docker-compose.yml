@@ -14,7 +14,7 @@ services:
   dashboard:
     container_name: ags_dashboard
     build:
-      context: ./dashboard
+      context: /data/Dbots/AGSHelperBot/dashboard
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
