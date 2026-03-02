@@ -18,6 +18,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ags-dashboard.rule=Host(`captionato.cloud`)" # Or dash.captionato.cloud based on your DNS
+      - "traefik.http.routers.ags-dashboard.entrypoints=web"
+      - "traefik.http.services.ags-dashboard.loadbalancer.server.port=3000"
     volumes:
       - '/data/Dbots/AGSHelperBot/data:/app/data'
     restart: always
