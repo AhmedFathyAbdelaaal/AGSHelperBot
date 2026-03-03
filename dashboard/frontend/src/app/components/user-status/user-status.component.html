@@ -9,14 +9,14 @@
     <table class="min-w-full text-left text-sm whitespace-nowrap">
       <thead class="uppercase tracking-wider border-b-2 border-gray-200">
         <tr>
-          <th scope="col" class="px-6 py-4">User ID</th>
+          <th scope="col" class="px-6 py-4">User</th>
           <th scope="col" class="px-6 py-4">Status</th>
           <th scope="col" class="px-6 py-4">Last Updated</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let s of statuses" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4">{{ s.user_id }}</td>
+          <td class="px-6 py-4">{{ s.display_name || s.username || s.user_id }}</td>
           <td class="px-6 py-4">
             <span [ngClass]="{
               'bg-green-100 text-green-800': s.status === 'Active',

@@ -27,10 +27,10 @@ def get_user_statuses():
     try:
         conn = get_db_connection("statuses.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT user_id, status, timestamp FROM user_status")
+        cursor.execute("SELECT user_id, username, display_name, status, timestamp FROM user_status")
         rows = cursor.fetchall()
         conn.close()
-        return [{"user_id": row["user_id"], "status": row["status"], "timestamp": row["timestamp"]} for row in rows]
+        return [dict(row) for row in rows]
     except Exception as e:
         return {"error": str(e)}
 

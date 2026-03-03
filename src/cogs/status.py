@@ -18,17 +18,25 @@ class Status(commands.Cog):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS user_status
-                     (user_id INTEGER PRIMARY KEY, status TEXT, timestamp TEXT)''')
+                     (user_id INTEGER PRIMARY KEY, username TEXT, display_name TEXT, status TEXT, timestamp TEXT)''')
+        
+        # Migration for existing tables
+        try:
+            c.execute("SELECT username FROM user_status LIMIT 1")
+        except sqlite3.OperationalError:
+            c.execute("ALTER TABLE user_status ADD COLUMN username TEXT")
+            c.execute("ALTER TABLE user_status ADD COLUMN display_name TEXT")
+
         conn.commit()
         conn.close()
 
-    def set_status(self, user_id, status):
+    def set_status(self, user, status):
         """Set or update the status for a user."""
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         timestamp = datetime.datetime.now().isoformat()
-        c.execute('''INSERT OR REPLACE INTO user_status (user_id, status, timestamp)
-                     VALUES (?, ?, ?)''', (user_id, status, timestamp))
+        c.execute('''INSERT OR REPLACE INTO user_status (user_id, username, display_name, status, timestamp)
+                     VALUES (?, ?, ?, ?, ?)''', (user.id, user.name, user.display_name, status, timestamp))
         conn.commit()
         conn.close()
 
@@ -43,17 +51,17 @@ class Status(commands.Cog):
 
     @app_commands.command(name="afk", description="Set your status to Away")
     async def afk(self, interaction: discord.Interaction):
-        self.set_status(interaction.user.id, "Away")
+        self.set_status(interaction.user, "Away")
         await interaction.response.send_message(f"✅ {interaction.user.mention} is now **Away**.", ephemeral=False)
 
     @app_commands.command(name="locked-in", description="Set your status to Busy Focusing")
     async def locked_in(self, interaction: discord.Interaction):
-        self.set_status(interaction.user.id, "Busy Focusing")
+        self.set_status(interaction.user, "Busy Focusing")
         await interaction.response.send_message(f"🔒 {interaction.user.mention} is now **Locked In** (Busy Focusing).", ephemeral=False)
 
     @app_commands.command(name="back", description="Reset your status to Active")
     async def back(self, interaction: discord.Interaction):
-        self.set_status(interaction.user.id, "Active")
+        self.set_status(interaction.user, "Active")
         await interaction.response.send_message(f"👋 {interaction.user.mention} is **Back** (Active).", ephemeral=False)
 
     @app_commands.command(name="status", description="Check the status of a user")
@@ -94,13 +102,13 @@ class Status(commands.Cog):
         if first_word in away_keywords:
             current_status = self.get_status(user_id)
             if current_status != "Away":
-                self.set_status(user_id, "Away")
+                self.set_status(message.author, "Away")
                 await message.channel.send(f"💤 Set {message.author.mention} to **Away**.")
         
         elif first_word in active_keywords:
              current_status = self.get_status(user_id)
              if current_status != "Active":
-                 self.set_status(user_id, "Active")
+                 self.set_status(message.author, "Active")
                  await message.channel.send(f"👋 Set {message.author.mention} to **Active**.")
 
 async def setup(bot):
