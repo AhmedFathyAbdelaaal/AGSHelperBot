@@ -63,7 +63,7 @@ def get_requests():
     try:
         conn = get_db_connection("requests.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT id, type, user_id, title, description, status, created_at FROM requests ORDER BY created_at DESC")
+        cursor.execute("SELECT id, req_type, user_id, status, created_at, title, data_1, data_2, data_3, data_4, data_5 FROM requests ORDER BY created_at DESC")
         rows = cursor.fetchall()
         conn.close()
         return [dict(row) for row in rows]
