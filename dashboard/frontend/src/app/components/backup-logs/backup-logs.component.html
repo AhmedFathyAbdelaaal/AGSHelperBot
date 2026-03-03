@@ -1,0 +1,38 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="text-xl font-bold mb-4 text-gray-800">Backup Logs</h2>
+  
+  <div *ngIf="loading" class="text-gray-500">Loading logs...</div>
+  <div *ngIf="!loading && logs.length === 0" class="text-gray-500">No logs found.</div>
+  
+  <div *ngIf="!loading && logs.length > 0" class="overflow-x-auto">
+    <table class="min-w-full text-left text-sm whitespace-nowrap">
+      <thead class="uppercase tracking-wider border-b-2 border-gray-200 bg-gray-50">
+        <tr>
+          <th scope="col" class="px-6 py-3">Type</th>
+          <th scope="col" class="px-6 py-3">Target</th>
+          <th scope="col" class="px-6 py-3">Requester</th>
+          <th scope="col" class="px-6 py-3">Time (UTC)</th>
+          <th scope="col" class="px-6 py-3">Status</th>
+          <th scope="col" class="px-6 py-3">Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of logs" class="border-b hover:bg-gray-50">
+          <td class="px-6 py-4">{{ l.backup_type | titlecase }}</td>
+          <td class="px-6 py-4 font-medium">{{ l.target_name }}</td>
+          <td class="px-6 py-4">{{ l.requester_name }}</td>
+          <td class="px-6 py-4 text-gray-500">{{ l.timestamp | date:'short' }}</td>
+          <td class="px-6 py-4">
+            <span [class.text-green-600]="l.status === 'Success'" [class.text-red-600]="l.status === 'Failed'">
+              {{ l.status }}
+            </span>
+          </td>
+          <td class="px-6 py-4 max-w-xs truncate" title="{{ l.details }}">
+            <a *ngIf="l.status === 'Success'" [href]="l.details" target="_blank" class="text-blue-600 hover:underline">View in Drive</a>
+            <span *ngIf="l.status !== 'Success'">{{ l.details }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

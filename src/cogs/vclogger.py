@@ -24,6 +24,7 @@ class VCLogger(commands.Cog):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 username TEXT,
+                display_name TEXT,
                 guild_id INTEGER,
                 guild_name TEXT,
                 channel_id INTEGER,
@@ -32,6 +33,12 @@ class VCLogger(commands.Cog):
                 leave_time TIMESTAMP
             )
         ''')
+        # Check if display_name column exists (for existing DBs)
+        try:
+            c.execute("SELECT display_name FROM voice_sessions LIMIT 0")
+        except sqlite3.OperationalError:
+            c.execute("ALTER TABLE voice_sessions ADD COLUMN display_name TEXT")
+            
         conn.commit()
         conn.close()
 
@@ -63,12 +70,12 @@ class VCLogger(commands.Cog):
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
             c.execute('''
-                INSERT INTO voice_sessions (user_id, username, guild_id, guild_name, channel_id, channel_name, join_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (member.id, member.name, member.guild.id, member.guild.name, channel.id, channel.name, timestamp))
+                INSERT INTO voice_sessions (user_id, username, display_name, guild_id, guild_name, channel_id, channel_name, join_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (member.id, member.name, member.display_name, member.guild.id, member.guild.name, channel.id, channel.name, timestamp))
             conn.commit()
             conn.close()
-            print(f"[VC Log] {member.name} joined {channel.name} in {member.guild.name}")
+            print(f"[VC Log] {member.display_name} ({member.name}) joined {channel.name} in {member.guild.name}")
         except Exception as e:
             print(f"[VC Log Error] Failed to log join: {e}")
 

@@ -39,12 +39,24 @@ def get_vclogs(limit: int = 50):
     try:
         conn = get_db_connection("vclogs.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT id, user_id, username, channel_name, join_time, leave_time FROM voice_sessions ORDER BY join_time DESC LIMIT ?", (limit,))
+        cursor.execute("SELECT * FROM voice_sessions ORDER BY join_time DESC LIMIT ?", (limit,))
         rows = cursor.fetchall()
         conn.close()
         return [dict(row) for row in rows]
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/api/backuplogs")
+def get_backuplogs(limit: int = 50):
+    try:
+        conn = get_db_connection("backuplogs.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM backup_logs ORDER BY timestamp DESC LIMIT ?", (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        return []
 
 @app.get("/api/requests")
 def get_requests():

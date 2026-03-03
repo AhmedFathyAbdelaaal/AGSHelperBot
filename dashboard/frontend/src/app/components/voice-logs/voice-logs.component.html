@@ -16,7 +16,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let l of logs" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 font-medium">{{ l.username || l.user_id }}</td>
+          <td class="px-6 py-4 font-medium">{{ l.display_name || l.username || l.user_id }}</td>
           <td class="px-6 py-4 text-indigo-600">{{ l.channel_name }}</td>
           <td class="px-6 py-4 text-green-600">{{ l.join_time | date:'short' }}</td>
           <td class="px-6 py-4 text-red-600">{{ l.leave_time ? (l.leave_time | date:'short') : 'In progress' }}</td>

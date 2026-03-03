@@ -5,11 +5,30 @@
       <p class="text-sm text-gray-500">Bot Dashboard</p>
     </div>
     <nav class="flex flex-col gap-2 p-4">
-      <a routerLink="/" class="text-gray-700 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Dashboard</a>
-      <a routerLink="/status" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">User Status</a>
-      <a routerLink="/vclogs" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Voice Logs</a>
-      <a routerLink="/requests" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Requests</a>
-      <a routerLink="/reports" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer">Reports</a>
+      <a routerLink="/" routerLinkActive="bg-gray-100 text-indigo-600" [routerLinkActiveOptions]="{exact: true}" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a routerLink="/status" routerLinkActive="bg-gray-100 text-indigo-600" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        User Status
+      </a>
+      <a routerLink="/vclogs" routerLinkActive="bg-gray-100 text-indigo-600" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c-1.7 0-3 1.2-3 2.6v6.8c0 1.4 1.3 2.6 3 2.6s3-1.2 3-2.6V4.6C15 3.2 13.7 2 12 2z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        Voice Logs
+      </a>
+      <a routerLink="/requests" routerLinkActive="bg-gray-100 text-indigo-600" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Requests
+      </a>
+      <a routerLink="/reports" routerLinkActive="bg-gray-100 text-indigo-600" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Reports
+      </a>
+      <a routerLink="/backups" routerLinkActive="bg-gray-100 text-indigo-600" class="text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition cursor-pointer flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+        Backup Logs
+      </a>
     </nav>
   </aside>
   <main class="flex-1 p-8 overflow-y-auto">

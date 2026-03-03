@@ -13,6 +13,7 @@ from googleapiclient.http import MediaFileUpload
 import shutil
 import datetime
 import io
+import sqlite3
 
 # Define scopes for Google Drive
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -21,7 +22,41 @@ class Backup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.drive_service = None
+        self.db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'backuplogs.db')
+        self.ensure_db()
         self.setup_drive_service()
+
+    def ensure_db(self):
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS backup_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                backup_type TEXT,
+                target_name TEXT,
+                requester_id INTEGER,
+                requester_name TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT,
+                details TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+    def log_backup(self, backup_type, target_name, requester, status, details):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            c = conn.cursor()
+            c.execute('''
+                INSERT INTO backup_logs (backup_type, target_name, requester_id, requester_name, status, details)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (backup_type, target_name, requester.id, requester.name, status, details))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Failed to log backup: {e}")
 
     def setup_drive_service(self):
         """Sets up the Google Drive API service."""
@@ -426,7 +461,9 @@ class Backup(commands.Cog):
             await self.share_file_anyone_reader(drive_id)
             link = f"https://drive.google.com/drive/folders/{drive_id}"
             await interaction.followup.send(f"Channel backup complete! [View in Drive]({link})")
+            self.log_backup('channel', target_channel.name, interaction.user, 'Success', link)
         except Exception as e:
+            self.log_backup('channel', target_channel.name, interaction.user, 'Failed', str(e))
             await interaction.followup.send(f"Backup failed: {e}")
             print(e)
         finally:
@@ -467,7 +504,9 @@ class Backup(commands.Cog):
             await self.share_file_anyone_reader(drive_id)
             link = f"https://drive.google.com/drive/folders/{drive_id}"
             await interaction.followup.send(f"Category backup complete! [View in Drive]({link})")
+            self.log_backup('category', target_category.name, interaction.user, 'Success', link)
         except Exception as e:
+            self.log_backup('category', target_category.name, interaction.user, 'Failed', str(e))
             await interaction.followup.send(f"Backup failed: {e}")
             print(e)
         finally:
@@ -528,7 +567,9 @@ class Backup(commands.Cog):
             link = f"https://drive.google.com/drive/folders/{server_drive_id}"
             print(f"[LOG] Server backup complete for: {interaction.guild.name}")
             await interaction.followup.send(f"Server backup complete! [View in Drive]({link})")
+            self.log_backup('server', interaction.guild.name, interaction.user, 'Success', link)
         except Exception as e:
+            self.log_backup('server', interaction.guild.name, interaction.user, 'Failed', str(e))
             await interaction.followup.send(f"Backup failed: {e}")
             print(f"[ERROR] Backup failed: {e}")
         finally:
